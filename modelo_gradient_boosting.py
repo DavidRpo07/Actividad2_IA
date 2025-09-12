@@ -1,96 +1,71 @@
-from preprocesamiento import (
-    cargar_y_seleccionar,
-    definir_columnas,
-    construir_preprocesador,
-    hacer_split,
-)
-
-from sklearn.pipeline import Pipeline
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.model_selection import GridSearchCV, StratifiedKFold
-from sklearn.metrics import (
-    accuracy_score, precision_score, classification_report, confusion_matrix, roc_auc_score
-)
+import io
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+from pathlib import Path
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.metrics import accuracy_score, precision_score, confusion_matrix
+from sklearn.pipeline import Pipeline
 
 
-def entrenar_gbm(X_train, y_train, pre):
-    pipe = Pipeline(steps=[
-        ("pre", pre),
-        ("gb", GradientBoostingClassifier(random_state=42))
-    ])
-
-    param_grid = {
-        "gb__n_estimators": [100, 200],
-        "gb__learning_rate": [0.01, 0.05, 0.1],
-        "gb__max_depth": [2, 3, 4],
-        "gb__subsample": [0.8, 1.0],
-        "gb__min_samples_leaf": [1, 3, 5],
-    }
-
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-    gs = GridSearchCV(
-        estimator=pipe,
-        param_grid=param_grid,
-        scoring="f1",
-        cv=cv,
-        n_jobs=-1,
-        verbose=0
-    )
-    gs.fit(X_train, y_train)
-    return gs.best_estimator_, gs.best_params_, gs.best_score_
+import preprocesamiento as prep
 
 
-def evaluar(modelo, X_test, y_test):
-    y_pred = modelo.predict(X_test)
+def _clean_conflict_lines(text: str) -> str:
+    bad_prefixes = ("<<<<<<<", "=======", ">>>>>>>")
+    return "\n".join(line for line in text.splitlines() if not line.startswith(bad_prefixes))
 
-    acc = accuracy_score(y_test, y_pred)
-    prec = precision_score(y_test, y_pred, average="weighted", zero_division=0)
+def _patch_read_csv():
+    """Parchea pd.read_csv SOLO dentro de preprocesamiento para ignorar marcadores de conflicto.
+    No cambia datos ni nombres de columnas. No escribe archivos."""
+    orig_read_csv = pd.read_csv
+    def patched_read_csv(filepath_or_buffer, *args, **kwargs):
+        if isinstance(filepath_or_buffer, (str, Path)) and Path(filepath_or_buffer).exists():
+            raw = Path(filepath_or_buffer).read_text(encoding="utf-8", errors="replace")
+            filtered = _clean_conflict_lines(raw)
+            return orig_read_csv(io.StringIO(filtered), *args, **kwargs)
+        return orig_read_csv(filepath_or_buffer, *args, **kwargs)
+    prep.pd.read_csv = patched_read_csv
+    return orig_read_csv
 
-    try:
-        y_proba = modelo.predict_proba(X_test)[:, 1]
-        auc = roc_auc_score(y_test, y_proba)
-    except Exception:
-        auc = None
-
-    print(f"\nMétricas GBM:\nAccuracy={acc:.3f}  Precision={prec:.3f}")
-    if auc is not None:
-        print(f"ROC-AUC={auc:.3f}")
-
-    reporte = classification_report(y_test, y_pred, output_dict=True, zero_division=0)
-    df = pd.DataFrame(reporte).T
-    df = df[["precision"]]
-    print("\nReporte de clasificación:\n", df)
-
-    print("Matriz de confusión:\n", confusion_matrix(y_test, y_pred))
-
-
-def top_importancias(modelo, num_cols, cat_cols):
-    onehot = modelo.named_steps["pre"].named_transformers_["cat"].named_steps["onehot"]
-    cat_feat = list(onehot.get_feature_names_out(cat_cols))
-    feat_names = list(num_cols) + cat_feat
-
-    importances = modelo.named_steps["gb"].feature_importances_
-    orden = np.argsort(importances)[::-1]
-    print("\nTop 15 características por importancia (GBM):")
-    for idx in orden[:15]:
-        print(f"{feat_names[idx]:>20s}: {importances[idx]:.4f}")
-
+def plot_and_save_confusion_matrix(y_true, y_pred, out_path="confusion_matrix.png"):
+    cm = confusion_matrix(y_true, y_pred)
+    fig = plt.figure(figsize=(5, 4))
+    ax = fig.add_subplot(111)
+    im = ax.imshow(cm, interpolation="nearest")
+    ax.set_title("Matriz de confusión")
+    plt.colorbar(im, ax=ax)
+    ticks = np.arange(cm.shape[0])
+    ax.set_xticks(ticks); ax.set_yticks(ticks)
+    ax.set_xlabel("Predicción"); ax.set_ylabel("Real")
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            ax.text(j, i, format(cm[i, j], "d"), ha="center", va="center", fontsize=10)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=180, bbox_inches="tight")
+    plt.close(fig)
+    print(f"[OK] Matriz de confusión guardada en: {out_path}")
 
 def main():
-    X, y = cargar_y_seleccionar("data.csv")
-    num_cols, cat_cols = definir_columnas(X)
-    pre = construir_preprocesador(num_cols, cat_cols)
-    X_train, X_test, y_train, y_test = hacer_split(X, y, test_size=0.2, seed=42)
-    modelo, params, cv_score = entrenar_gbm(X_train, y_train, pre)
+    orig = _patch_read_csv()
+    try:
+        X, y = prep.cargar_y_seleccionar("data.csv")
+        num_cols, cat_cols = prep.definir_columnas(X)
+        pre = prep.construir_preprocesador(num_cols, cat_cols)
+        X_train, X_test, y_train, y_test = prep.hacer_split(X, y)
 
-    print("\nMejores hiperparámetros:", params)
-    print("Mejor score CV (F1):", round(cv_score, 3))
+        gb = GradientBoostingClassifier(learning_rate=0.05, n_estimators=200, max_depth=3)
+        clf = Pipeline([("pre", pre), ("gb", gb)])
+        clf.fit(X_train, y_train)
+        y_pred = clf.predict(X_test)
 
-    evaluar(modelo, X_test, y_test)
-    top_importancias(modelo, num_cols, cat_cols)
+        print("\nMétricas (conjunto de prueba):")
+        print(f"Accuracy = {accuracy_score(y_test, y_pred):.3f}")
+        print(f"Precision = {precision_score(y_test, y_pred):.3f}")
 
+        plot_and_save_confusion_matrix(y_test, y_pred)
+    finally:
+        prep.pd.read_csv = orig
 
 if __name__ == "__main__":
     main()

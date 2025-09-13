@@ -2,12 +2,15 @@ import io
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import sys
+import os
 from pathlib import Path
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import accuracy_score, precision_score, confusion_matrix
 from sklearn.pipeline import Pipeline
 
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import preprocesamiento as prep
 
 

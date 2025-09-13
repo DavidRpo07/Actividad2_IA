@@ -9,8 +9,12 @@ from sklearn.metrics import accuracy_score, precision_score, ConfusionMatrixDisp
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from preprocesamiento import cargar_y_seleccionar, hacer_split, definir_columnas, construir_preprocesador
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(script_dir)
+data_path = os.path.join(parent_dir, "data.csv")
+
 # 1) Cargar datos y hacer split en train/test
-X, y = cargar_y_seleccionar("../data.csv") 
+X, y = cargar_y_seleccionar(data_path) 
 X_train, X_test, y_train, y_test = hacer_split(X, y, test_size=0.2, seed=42)
 
 # 2) Preprocesamiento
@@ -45,7 +49,7 @@ print(f"Precision (No sobrevivió = 0): {prec_not_survive:.4f}")
 ConfusionMatrixDisplay.from_predictions(y_test, y_pred, cmap="Blues")
 plt.title("Matriz de confusión Random Forest")
 plt.grid(False)
-plt.savefig("matrizConf_rf.png", dpi=150)
+plt.savefig(os.path.join(script_dir, "matrizConf_rf.png"), dpi=150)
 plt.close()
 
 # Importancia de características
@@ -65,7 +69,9 @@ plt.bar(range(min(top_k, len(feat_names))), importancias[orden][:top_k])
 plt.xticks(range(min(top_k, len(feat_names))), feat_names[orden][:top_k], rotation=90)
 plt.title("Feature Importances RandomForest")
 plt.tight_layout()
-plt.savefig("feature_importances_rf.png", dpi=150)
+plt.savefig(os.path.join(script_dir, "feature_importances_rf.png"), dpi=150)
 plt.close()
 
-print("\nSe guardaron: matrizConf_rf.png y feature_importances_rf.png")
+print(f"\nSe guardaron las imágenes en: {script_dir}")
+print("- matrizConf_rf.png")
+print("- feature_importances_rf.png")

@@ -16,8 +16,6 @@ def _clean_conflict_lines(text: str) -> str:
     return "\n".join(line for line in text.splitlines() if not line.startswith(bad_prefixes))
 
 def _patch_read_csv():
-    """Parchea pd.read_csv SOLO dentro de preprocesamiento para ignorar marcadores de conflicto.
-    No cambia datos ni nombres de columnas. No escribe archivos."""
     orig_read_csv = pd.read_csv
     def patched_read_csv(filepath_or_buffer, *args, **kwargs):
         if isinstance(filepath_or_buffer, (str, Path)) and Path(filepath_or_buffer).exists():

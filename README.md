@@ -55,16 +55,24 @@ El objetivo del problema es predecir la supervivencia de un pasajero del Titanic
 ## 4. Evaluación de resultados
 
 ### a. Métricas de rendimiento
-Se utilizaron las siguientes métricas:
-- **Accuracy:** porcentaje de aciertos totales.  
-- **Precision (sobrevivió):** de los predichos como sobrevivientes, cuántos realmente lo fueron.  
-- **Precision (no sobrevivió):** de los predichos como no sobrevivientes, cuántos realmente lo fueron.  
+1. **Random Forest**
+  - Exactitud: 0.8156
+  - Precisión(Sobrevivió): 0.7903
+  - Precisión(No Sobrevivió): 0.8291
+2. **Red Neuronal (MLPClassifier)**
+  - Exactitud: 0.7877
+  - Precisión(Sobrevivió): 0.7385
+  - Precisión(No Sobrevivió): 0.8158
+3. **Gradient Boosting**
+  - Exactitud: 0.804
+  - Precisión(Sobrevivió): 0.804
+    
 ### b. Visualizaciones
-- **Matriz de confusión** (`matrizConf_rf.png`) para observar aciertos y errores del modelo.  
-- **Gráfico de importancia de características** (`feature_importances_rf.png`), donde se observa que `Fare`, `Age` y `Sex` fueron las variables más influyentes.
-- **Matriz de confusión (MLP)** (`matrizConf_mlp.png`) para la red neuronal, mostrando la distribución de aciertos y errores.
-- Se reportan las mismas métricas (accuracy y precisión por clase) para comparar directamente con Random Forest.
-- **Matriz de confusión (Gradient Boosting)** (`matrizConf_gb.png`) para comparar su rendimiento frente a los otros algoritmos.
+Las siguientes visualizaciones se encuentran en el directorio de cada modelo.
+- **Matriz de confusión (Random Forest)** (`matrizConf_rf.png`). 
+- **Gráfico de importancia de características(Random Forest)** (`feature_importances_rf.png`), donde se observa que `Fare`, `Age` y `Sex` fueron las variables más influyentes.
+- **Matriz de confusión (MLP)** (`matrizConf_mlp.png`).
+- **Matriz de confusión (Gradient Boosting)** (`matrizConf_gb.png`).
 
 ---
 
@@ -89,10 +97,16 @@ Ambos modelos fueron entrenados y evaluados bajo las mismas condiciones de prepr
 
 
 **Comparación de resultados:**
-- Si bien ambos modelos pueden alcanzar resultados similares en accuracy, Random Forest suele ser más estable y fácil de interpretar en este tipo de problemas tabulares, dando en este caso una prediccion mas precisa.
-- La red neuronal puede superar a Random Forest si se ajusta cuidadosamente y si existen patrones complejos en los datos, pero también puede sobreajustar si no se regula adecuadamente.
-- Gradient Boosting logró un rendimiento competitivo, con buen balance entre precisión y capacidad de generalización, destacándose como una opción sólida si hay tiempo para optimización fina.
 
-Recomendamos revisar las métricas y las matrices de confusión generadas para elegir el modelo más adecuado según el objetivo del análisis.
+
+El Random Forest fue el modelo con mejor rendimiento global y el más balanceado, mostrando resultados consistentes tanto en la detección de sobrevivientes como de no sobrevivientes. El Gradient Boosting, en cambio, presentó un comportamiento algo más desbalanceado: logró un mayor número de aciertos en la clase de no sobrevivientes respecto al Random Forest, pero tuvo un desempeño más débil en la detección de sobrevivientes, siendo además el modelo con mayor cantidad de falsos negativos. Finalmente, la Red Neuronal fue la de menor rendimiento global, aunque mantuvo un comportamiento relativamente equilibrado en ambas clases, presentó el mayor número de falsos positivos (17), lo que muestra una tendencia a sobreestimar la clase de sobrevivientes.
 
 ---
+## 6. Conclusiones
+
+Este trabajo nos permitió llevar a cabo un proceso completo de entrenamiento de modelos, desde la preparación de los datos hasta el entrenamiento y la comparación de resultados entre distintos algoritmos de clasificación. Se pudo evidenciar la relevancia del preprocesamiento, ya que aspectos como la limpieza, la estandarización y el manejo de datos faltantes resultaron determinantes para lograr un buen entrenamiento y, por ende , obtener resultados confiables.
+
+En cuanto al desempeño, el modelo que se destacó como el más adecuado para este problema fue el Random Forest, ya que presentó la mayor exactitud y un balance consistente en la detección tanto de sobrevivientes como de no sobrevivientes. Su robustez frente al sobreajuste lo convierte en una herramienta muy útil para datasets de tamaño moderado, con un nivel de ruido controlado y que combinan variables numéricas y categóricas.
+
+En conclusión, esta actividad no solo permitió comprender el flujo completo de entrenamiento y evaluación de modelos, sino también reforzó la importancia de elegir el algoritmo en función de las características del problema y del conjunto de datos disponible.
+

@@ -36,7 +36,13 @@ El objetivo del problema es predecir la supervivencia de un pasajero del Titanic
 1. **Random Forest**  
    - Parámetros principales: `n_estimators=300`, `class_weight="balanced"`, `random_state=42`.  
    - Utilizamos (`n_jobs=-1`) para acelerar el entrenamiento.
-
+2. **Red Neuronal (MLPClassifier)**
+   - Arquitectura: Dos capas ocultas con 100 y 50 neuronas respectivamente.
+   - Función de activación: `relu`.
+   - Optimizador: `adam`.
+   - Iteraciones máximas: 500.
+   - Semilla aleatoria: 42.
+   - Implementado con `sklearn.neural_network.MLPClassifier` (ver `neural/mlp.py`).
 ---
 
 ## 4. Evaluación de resultados
@@ -46,11 +52,32 @@ Se utilizaron las siguientes métricas:
 - **Accuracy:** porcentaje de aciertos totales.  
 - **Precision (sobrevivió):** de los predichos como sobrevivientes, cuántos realmente lo fueron.  
 - **Precision (no sobrevivió):** de los predichos como no sobrevivientes, cuántos realmente lo fueron.  
-
-
-
 ### b. Visualizaciones
 - **Matriz de confusión** (`matrizConf_rf.png`) para observar aciertos y errores del modelo.  
 - **Gráfico de importancia de características** (`feature_importances_rf.png`), donde se observa que `Fare`, `Age` y `Sex` fueron las variables más influyentes.
+- **Matriz de confusión (MLP)** (`matrizConf_mlp.png`) para la red neuronal, mostrando la distribución de aciertos y errores.
+- Se reportan las mismas métricas (accuracy y precisión por clase) para comparar directamente con Random Forest.
+
+---
+
+## 5. Análisis comparativo: Random Forest vs Red Neuronal vs ...
+
+Ambos modelos fueron entrenados y evaluados bajo las mismas condiciones de preprocesamiento y división de datos. A continuación, se resumen las observaciones principales:
+
+- **Random Forest**
+   - Tiende a ser más robusto ante el sobreajuste y requiere menos ajuste de hiperparámetros.
+   - Proporciona interpretabilidad gracias a la importancia de características.
+   - Suele converger más rápido y es menos sensible a la escala de los datos.
+
+- **Red Neuronal (MLPClassifier)**
+   - Puede modelar relaciones más complejas y no lineales entre las variables.
+   - Su rendimiento depende fuertemente de la normalización y de la configuración de hiperparámetros (número de capas, neuronas, tasa de aprendizaje, etc.).
+   - Puede requerir más tiempo de entrenamiento y es más sensible a los datos ruidosos o desbalanceados.
+
+**Comparación de resultados:**
+- Si bien ambos modelos pueden alcanzar resultados similares en accuracy, Random Forest suele ser más estable y fácil de interpretar en este tipo de problemas tabulares.
+- La red neuronal puede superar a Random Forest si se ajusta cuidadosamente y si existen patrones complejos en los datos, pero también puede sobreajustar si no se regula adecuadamente.
+
+Se recomienda revisar las métricas y las matrices de confusión generadas para elegir el modelo más adecuado según el objetivo del análisis.
 
 ---
